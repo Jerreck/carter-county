@@ -1,436 +1,368 @@
-// Carter County Democrats — single-page website.
-// Content structure mirrors mcdemocrats.com: nav → hero → contact → precincts → meetings → civic → footer
+// Carter County Democrats — mobile-first single-page site.
+// Layout via classes in site.css; this file owns content + interactivity.
 
-const { useState } = React;
+const { useState, useEffect } = React;
 
-// ---------- Reusable bits ----------
-const Container = ({ children, style }) => (
-  <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 32px", ...style }}>{children}</div>
-);
-
-const Eyebrow = ({ children, color }) => (
-  <div className="label-mono" style={{ color: color || "var(--ink-3)" }}>{children}</div>
-);
-
-const SectionHead = ({ eyebrow, title, sub, dark }) => (
-  <div style={{ maxWidth: 760, marginBottom: 48 }}>
-    <Eyebrow color={dark ? "var(--sky)" : "var(--federal)"}>{eyebrow}</Eyebrow>
-    <h2 style={{
-      fontFamily: "var(--slab)", fontWeight: 700, fontSize: 56, lineHeight: 1, letterSpacing: "-0.025em",
-      color: dark ? "var(--bone)" : "var(--navy)", margin: "16px 0 18px",
-    }}>{title}</h2>
-    {sub && <p style={{ fontFamily: "var(--sans)", fontSize: 18, lineHeight: 1.55, color: dark ? "rgba(245,240,230,0.78)" : "var(--ink-2)", margin: 0 }}>{sub}</p>}
-  </div>
-);
-
-const Btn = ({ href, children, kind = "primary", external }) => {
-  const styles = {
-    primary: { background: "var(--navy)", color: "var(--bone)" },
-    urgent:  { background: "var(--civic-red)", color: "var(--bone)" },
-    sky:     { background: "var(--sky)", color: "var(--navy)" },
-    ghost:   { background: "transparent", color: "var(--navy)", border: "2px solid var(--navy)" },
-    "ghost-light": { background: "transparent", color: "var(--bone)", border: "2px solid var(--bone)" },
-  }[kind];
+// ---------- Tiny inline icons (simple shapes only — no hand-drawn SVGs) ----------
+const Icon = ({ kind, size = 18 }) => {
+  // generic glyph circle with character/symbol — used inside cards
+  const map = { mail: "@", phone: "☎", fb: "f", group: "★", cal: "▤", map: "◆" };
   return (
-    <a className="btn-reset" href={href} target={external ? "_blank" : undefined} rel={external ? "noopener" : undefined}
-       style={{
-         ...styles, padding: "14px 22px", fontFamily: "var(--sans)", fontWeight: 800, fontSize: 13,
-         letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1, alignItems: "center", gap: 10,
-       }}>
-      {children}
-    </a>
+    <span style={{
+      fontFamily: "var(--slab)", fontWeight: 700, fontSize: size, lineHeight: 1,
+    }}>{map[kind] || "•"}</span>
   );
 };
 
-// ---------- Top nav ----------
+// ---------- Section header ----------
+const SectionHead = ({ eyebrow, title, sub, dark }) => (
+  <div className="sec-head">
+    <div className={"label-mono " + (dark ? "label-mono--sky" : "label-mono--federal")}>{eyebrow}</div>
+    <h2 className={"h2 " + (dark ? "h2--light" : "")}>{title}</h2>
+    {sub && <p className={"lead " + (dark ? "lead--light" : "")}>{sub}</p>}
+  </div>
+);
+
+// ---------- Nav with hamburger ----------
 const Nav = () => {
-  const [scrolled, setScrolled] = useState(false);
-  React.useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [open]);
+
+  const links = [
+    ["Find Your Precinct", "#precincts"],
+    ["Meetings", "#meetings"],
+    ["Vote", "#vote"],
+    ["Contact", "#contact"],
+  ];
+
   return (
-    <div style={{
-      position: "sticky", top: 0, zIndex: 50,
-      background: scrolled ? "rgba(11,37,69,0.97)" : "var(--navy)",
-      color: "var(--bone)", borderBottom: "1px solid rgba(245,240,230,0.1)",
-      transition: "background 0.2s",
-    }}>
-      <div style={{ height: 4, background: "var(--civic-red)" }} />
-      <Container style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 32px" }}>
-        <a href="#top" className="nav-link" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <OkMark size={32} body="var(--sky)" accent="var(--civic-red)" />
-          <div>
-            <div style={{ fontFamily: "var(--slab)", fontWeight: 700, fontSize: 18, lineHeight: 1, letterSpacing: "0.01em" }}>Carter County Democrats</div>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.18em", color: "var(--sky)", marginTop: 4 }}>CARTERCOUNTYDEMS.ORG</div>
+    <nav className="nav">
+      <div className="nav__bar-top" />
+      <div className="nav__inner">
+        <a href="#top" className="nav__brand" onClick={() => setOpen(false)}>
+          <OkMark size={28} body="#5DB2E8" accent="#C8102E" />
+          <div className="nav__brand-text">
+            <div className="nav__brand-title">Carter County Democrats</div>
+            <div className="nav__brand-domain">CARTERCOUNTYDEMS.ORG</div>
           </div>
         </a>
-        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
-          {[
-            ["Find Your Precinct", "#precincts"],
-            ["Meetings", "#meetings"],
-            ["Vote", "#vote"],
-            ["Contact", "#contact"],
-          ].map(([l, h]) => (
-            <a key={h} href={h} className="nav-link label-mono" style={{ color: "var(--bone)" }}>{l}</a>
+
+        {/* Desktop */}
+        <div className="nav__desktop">
+          {links.map(([l, h]) => (
+            <a key={h} href={h} className="nav__desktop-link">{l}</a>
           ))}
-          <Btn href="#getinvolved" kind="urgent">Get Involved →</Btn>
+          <a href="#getinvolved" className="btn btn--urgent">Get Involved →</a>
         </div>
-      </Container>
-    </div>
+
+        {/* Mobile hamburger */}
+        <button
+          className={"nav__hamburger" + (open ? " is-open" : "")}
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          onClick={() => setOpen(!open)}
+        >
+          <span className="nav__hamburger-icon">
+            <span /><span /><span />
+          </span>
+        </button>
+      </div>
+
+      {/* Mobile panel */}
+      {open && (
+        <div className="nav__mobile-panel">
+          {links.map(([l, h]) => (
+            <a key={h} href={h} className="nav__mobile-link" onClick={() => setOpen(false)}>
+              <span style={{ color: "var(--bone)" }}>{l}</span>
+              <span>→</span>
+            </a>
+          ))}
+          <a href="#getinvolved" className="btn btn--urgent btn--block nav__mobile-cta" onClick={() => setOpen(false)}>
+            Get Involved →
+          </a>
+        </div>
+      )}
+    </nav>
   );
 };
 
 // ---------- Hero ----------
 const Hero = () => (
-  <section id="top" style={{ background: "var(--navy)", color: "var(--bone)", position: "relative", overflow: "hidden" }}>
-    {/* decorative stripe pattern bg */}
-    <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(135deg, rgba(93,178,232,0.05) 0 14px, transparent 14px 28px)" }} />
-    {/* corner star cluster */}
-    <div style={{ position: "absolute", top: 56, right: 64, opacity: 0.5 }}>
-      <StarRow count={5} size={14} color="var(--sky)" gap={12} />
-    </div>
-    <Container style={{ position: "relative", padding: "96px 32px 80px", display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 64, alignItems: "center" }}>
-      <div>
-        <Eyebrow color="var(--sky)">CARTER COUNTY · OKLAHOMA</Eyebrow>
-        <h1 style={{
-          fontFamily: "var(--slab)", fontWeight: 700, fontSize: 88, lineHeight: 0.95, letterSpacing: "-0.035em",
-          margin: "18px 0 24px",
-        }}>
-          Building a Stronger <em style={{ fontStyle: "italic", color: "var(--sky)" }}>Carter County</em>
-        </h1>
-        <p style={{ fontFamily: "var(--sans)", fontSize: 20, lineHeight: 1.5, color: "rgba(245,240,230,0.85)", maxWidth: 620, margin: "0 0 36px" }}>
+  <section id="top" className="hero">
+    <div className="hero__pattern" />
+    <div className="hero__inner">
+      <div className="hero__content">
+        <div className="label-mono label-mono--sky">CARTER COUNTY · OKLAHOMA</div>
+        <h1 className="hero__h1">Building a Stronger <em>Carter County</em></h1>
+        <p className="hero__lead">
           We're neighbors working together for better schools, higher wages, and a more effective government that represents everyone in Carter County, Oklahoma. Join us.
         </p>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          <Btn href="sms:+15805550155" kind="sky">📱 Text HOWDY to 580-555-0155</Btn>
-          <Btn href="#meetings" kind="ghost-light">📅 Add to Calendar</Btn>
+        <div className="hero__ctas">
+          <a href="sms:+15805550155" className="btn btn--sky">📱 Text HOWDY to 580-555-0155</a>
+          <a href="#meetings" className="btn btn--ghost-light">📅 Add to Calendar</a>
         </div>
-        <div style={{
-          marginTop: 40, padding: "18px 22px", background: "rgba(245,240,230,0.06)",
-          border: "1px solid rgba(93,178,232,0.4)", display: "flex", alignItems: "center", gap: 18,
-        }}>
-          <div style={{
-            width: 48, height: 48, background: "var(--civic-red)", color: "var(--bone)",
-            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            fontFamily: "var(--slab)", fontWeight: 700, fontSize: 20, lineHeight: 1,
-          }}>📅</div>
-          <div style={{ flex: 1, fontSize: 14, lineHeight: 1.5 }}>
-            <strong style={{ fontWeight: 700, color: "var(--bone)" }}>Next Meeting:</strong>{" "}
-            Third Thursday of every month · 6:30 PM · Ardmore Public Library, 320 E St NW
+        <div className="hero__next-meeting">
+          <div className="hero__next-meeting-row" style={{ flex: 1 }}>
+            <div className="hero__next-meeting-icon">📅</div>
+            <div className="hero__next-meeting-text">
+              <strong>Next Meeting:</strong>{" "}Third Thursday of every month · 6:30 PM · Ardmore Public Library
+            </div>
           </div>
-          <a href="#meetings" className="nav-link label-mono" style={{ color: "var(--sky)", whiteSpace: "nowrap" }}>Details ↓</a>
+          <a href="#meetings" className="hero__next-meeting-link">Details ↓</a>
         </div>
       </div>
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <LogoBadge scale={1.5} />
+      <div className="hero__badge">
+        <LogoBadge scale={1.0} />
       </div>
-    </Container>
-    {/* bottom stripe */}
-    <div style={{ height: 6, background: "var(--civic-red)" }} />
-    <div style={{ height: 3, background: "var(--sky)" }} />
+    </div>
+    <div className="hero__bottom-stripe" />
+    <div className="hero__bottom-stripe-2" />
   </section>
 );
 
 // ---------- Contact ----------
 const Contact = () => {
   const items = [
-    { label: "Email",         val: "info@cartercountydems.org", href: "mailto:info@cartercountydems.org", icon: "✉" },
-    { label: "Phone",         val: "(580) 555-0155",            href: "tel:+15805550155",                 icon: "☎" },
-    { label: "Facebook Page", val: "Follow Us",                 href: "https://www.facebook.com/cartercountydemocrats", external: true, icon: "f" },
-    { label: "Facebook Group",val: "Join the Conversation",     href: "https://www.facebook.com/cartercountydemocrats", external: true, icon: "♣" },
+    { label: "Email",          val: "info@cartercountydems.org",   href: "mailto:info@cartercountydems.org", icon: "mail" },
+    { label: "Phone",          val: "(580) 555-0155",              href: "tel:+15805550155",                 icon: "phone" },
+    { label: "Facebook Page",  val: "Follow Us",                   href: "https://www.facebook.com/cartercountydemocrats", external: true, icon: "fb" },
+    { label: "Facebook Group", val: "Join the Conversation",       href: "https://www.facebook.com/cartercountydemocrats", external: true, icon: "group" },
   ];
   return (
-    <section id="contact" style={{ background: "var(--paper)", padding: "96px 0", borderBottom: "1px solid var(--line)" }}>
-      <Container>
-        <SectionHead eyebrow="REACH OUT" title="Contact Us" sub="Have a question, want to get involved, or just want to say hello? Reach out — we'd love to hear from you." />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 18 }}>
+    <section id="contact" className="section section--paper">
+      <div className="container">
+        <SectionHead eyebrow="REACH OUT" title="Contact Us"
+          sub="Have a question, want to get involved, or just want to say hello? Reach out — we'd love to hear from you." />
+        <div className="contact-grid">
           {items.map(({ label, val, href, external, icon }) => (
-            <a key={label} className="btn-reset" href={href} target={external ? "_blank" : undefined} rel={external ? "noopener" : undefined}
-               style={{
-                 display: "flex", flexDirection: "column", justifyContent: "space-between",
-                 padding: 24, background: "var(--paper)", border: "1px solid var(--line)",
-                 textDecoration: "none", color: "var(--ink)", minHeight: 180,
-                 transition: "border-color 0.15s, transform 0.15s",
-               }}
-               onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--navy)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-               onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--line)"; e.currentTarget.style.transform = "translateY(0)"; }}>
-              <div style={{
-                width: 44, height: 44, background: "var(--navy)", color: "var(--bone)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontFamily: "var(--slab)", fontWeight: 700, fontSize: 22, lineHeight: 1,
-              }}>{icon}</div>
+            <a key={label} href={href} target={external ? "_blank" : undefined} rel={external ? "noopener" : undefined} className="contact-card">
+              <div className="contact-card__icon"><Icon kind={icon} size={20} /></div>
               <div>
-                <Eyebrow>{label}</Eyebrow>
-                <div style={{ fontFamily: "var(--slab)", fontWeight: 600, fontSize: 20, color: "var(--navy)", marginTop: 6, letterSpacing: "-0.01em", lineHeight: 1.15 }}>{val}</div>
+                <div className="contact-card__label">{label}</div>
+                <div className="contact-card__val">{val}</div>
               </div>
             </a>
           ))}
         </div>
-      </Container>
+      </div>
     </section>
   );
 };
 
 // ---------- Precincts ----------
 const Precincts = () => (
-  <section id="precincts" style={{ background: "var(--bone)", padding: "96px 0", borderBottom: "1px solid var(--line)" }}>
-    <Container>
+  <section id="precincts" className="section section--bone">
+    <div className="container">
       <SectionHead eyebrow="ORGANIZE YOUR NECK OF THE WOODS" title="Find Your Precinct"
         sub="Carter County is divided into 21 voting precincts. Every precinct needs Democratic Precinct Officers — leaders who knock doors, turn out voters, and represent their community. Find yours and see how you can help." />
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 32, alignItems: "stretch" }}>
-        {/* Left: callout card */}
-        <div style={{ background: "var(--navy)", color: "var(--bone)", padding: 40, position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(135deg, rgba(93,178,232,0.05) 0 12px, transparent 12px 24px)" }} />
-          <div style={{ position: "relative", display: "flex", flexDirection: "column", flex: 1 }}>
-            <Eyebrow color="var(--sky)">INTERACTIVE PRECINCT MAP</Eyebrow>
-            <div style={{ fontFamily: "var(--slab)", fontWeight: 700, fontSize: 32, lineHeight: 1.05, letterSpacing: "-0.02em", marginTop: 14 }}>
-              Enter your address to instantly see which of Carter County's 21 voting precincts you live in — then sign up to become a Precinct Officer.
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 28 }}>
-              {[
-                "Enter your Carter County address",
-                "Your precinct is highlighted on the map",
-                "Click to become a Precinct Officer candidate",
-              ].map((t, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
-                  <div style={{
-                    width: 28, height: 28, background: "var(--sky)", color: "var(--navy)",
-                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                    fontFamily: "var(--slab)", fontWeight: 700, fontSize: 15, lineHeight: 1,
-                  }}>{i + 1}</div>
-                  <div style={{ fontSize: 16, lineHeight: 1.5, paddingTop: 4 }}>{t}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ flex: 1 }} />
-            <div style={{ marginTop: 32 }}>
-              <Btn href="#precinct-map" kind="sky">Open Precinct Map →</Btn>
-            </div>
+      <div className="precincts-grid">
+        <div className="precinct-callout">
+          <div className="precinct-callout__pattern" />
+          <div className="label-mono label-mono--sky" style={{ position: "relative" }}>INTERACTIVE PRECINCT MAP</div>
+          <div className="precinct-callout__title">
+            Enter your address to instantly see which of Carter County's 21 voting precincts you live in — then sign up to become a Precinct Officer.
+          </div>
+          <div className="precinct-callout__steps">
+            {[
+              "Enter your Carter County address",
+              "Your precinct is highlighted on the map",
+              "Click to become a Precinct Officer candidate",
+            ].map((t, i) => (
+              <div key={i} className="precinct-step">
+                <div className="precinct-step__num">{i + 1}</div>
+                <div className="precinct-step__text">{t}</div>
+              </div>
+            ))}
+          </div>
+          <div className="precinct-callout__cta">
+            <a href="#precinct-map" className="btn btn--sky">Open Precinct Map →</a>
           </div>
         </div>
 
-        {/* Right: stylized "map" placeholder */}
-        <div style={{ background: "var(--paper)", border: "1px solid var(--line)", padding: 28, display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+        <div className="precinct-map" id="precinct-map">
+          <div className="precinct-map__head">
             <div>
-              <Eyebrow>CARTER COUNTY · 21 PRECINCTS</Eyebrow>
-              <div style={{ fontFamily: "var(--slab)", fontWeight: 700, fontSize: 22, color: "var(--navy)", marginTop: 6, letterSpacing: "-0.01em" }}>Where do you vote?</div>
+              <div className="label-mono">CARTER COUNTY · 21 PRECINCTS</div>
+              <div className="precinct-map__title">Where do you vote?</div>
             </div>
-            <OkMark size={32} body="var(--navy)" accent="var(--civic-red)" />
+            <OkMark size={32} body="#0B2545" accent="#C8102E" />
           </div>
-          {/* faux map */}
-          <div style={{ flex: 1, position: "relative", background: "var(--bone)", border: "1px solid var(--line)", overflow: "hidden", minHeight: 280 }}>
-            {/* grid of "precincts" */}
-            <div style={{ position: "absolute", inset: 0, display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gridTemplateRows: "repeat(4, 1fr)", gap: 1, padding: 1, background: "var(--line)" }}>
-              {Array.from({ length: 21 }).map((_, i) => {
-                const highlight = i === 9;
-                return (
-                  <div key={i} style={{
-                    background: highlight ? "var(--sky)" : "var(--paper)",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    fontFamily: "var(--mono)", fontSize: 11, fontWeight: 500, color: highlight ? "var(--navy)" : "var(--ink-3)",
-                    position: "relative",
-                  }}>
-                    {String(i + 1).padStart(2, "0")}
-                    {highlight && (
-                      <div style={{ position: "absolute", inset: 0, border: "2px solid var(--civic-red)", pointerEvents: "none" }} />
-                    )}
-                  </div>
-                );
-              })}
-              {/* fill last 3 grid cells with bone */}
-              <div style={{ background: "var(--bone)" }} />
-              <div style={{ background: "var(--bone)" }} />
-              <div style={{ background: "var(--bone)" }} />
-            </div>
+          <div className="precinct-map__grid">
+            {Array.from({ length: 21 }).map((_, i) => {
+              const highlight = i === 9;
+              return (
+                <div key={i} className={"precinct-cell" + (highlight ? " precinct-cell--highlight" : "")}>
+                  {String(i + 1).padStart(2, "0")}
+                </div>
+              );
+            })}
+            <div className="precinct-cell precinct-cell--empty" />
+            <div className="precinct-cell precinct-cell--empty" />
+            <div className="precinct-cell precinct-cell--empty" />
           </div>
-          {/* address input */}
-          <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
-            <input placeholder="123 Main St, Ardmore, OK" style={{
-              flex: 1, padding: "12px 14px", background: "var(--bone)", border: "1px solid var(--line)",
-              fontFamily: "var(--sans)", fontSize: 14, color: "var(--navy)", outline: "none",
-            }} />
-            <button style={{
-              padding: "12px 20px", background: "var(--navy)", color: "var(--bone)", border: 0,
-              fontFamily: "var(--sans)", fontWeight: 800, fontSize: 12, letterSpacing: "0.1em",
-              textTransform: "uppercase", cursor: "pointer",
-            }}>FIND</button>
-          </div>
+          <form className="precinct-form" onSubmit={e => e.preventDefault()}>
+            <input placeholder="123 Main St, Ardmore, OK" />
+            <button type="submit" className="btn btn--primary">Find</button>
+          </form>
         </div>
       </div>
-    </Container>
+    </div>
   </section>
 );
 
 // ---------- Meetings ----------
 const Meetings = () => (
-  <section id="meetings" style={{ background: "var(--paper)", padding: "96px 0", borderBottom: "1px solid var(--line)" }}>
-    <Container>
+  <section id="meetings" className="section section--paper">
+    <div className="container">
       <SectionHead eyebrow="MONTHLY MEETINGS" title="Come to a Meeting"
         sub="Our regular monthly meetings are open to all Democrats and interested community members in Carter County. Come hear what we're working on, meet your neighbors, and have a voice in local Democratic Party decisions. No registration required — just show up." />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "stretch" }}>
-        {/* Details card */}
-        <div style={{ background: "var(--paper)", border: "1px solid var(--line)", padding: 36 }}>
-          <Eyebrow>REGULAR MEETING DETAILS</Eyebrow>
-          <h3 style={{ fontFamily: "var(--slab)", fontWeight: 700, fontSize: 28, color: "var(--navy)", margin: "10px 0 24px", letterSpacing: "-0.02em" }}>
-            Third Thursday, every month.
+
+      <div className="meetings-grid">
+        <div className="meeting-card">
+          <div className="label-mono">REGULAR MEETING DETAILS</div>
+          <h3 className="meeting-card__title">Third Thursday, every month.</h3>
+
+          {[
+            { k: "WHEN",      v: "Third Thursday of every month" },
+            { k: "TIME",      v: "6:30 PM — 8:00 PM" },
+            { k: "LOCATION",  v: "Ardmore Public Library\n320 E Street NW, Ardmore, OK 73401", map: true },
+            { k: "QUESTIONS", v: "info@cartercountydems.org", mailto: true },
+          ].map(({ k, v, map, mailto }) => (
+            <div key={k} className="meeting-row">
+              <div className="label-mono">{k}</div>
+              <div className="meeting-row__value">
+                {mailto
+                  ? <a href={`mailto:${v}`} className="underline-link">{v}</a>
+                  : v}
+                {map && (
+                  <div style={{ marginTop: 8 }}>
+                    <a href="https://maps.google.com/?q=320+E+St+NW+Ardmore+OK+73401" target="_blank" rel="noopener" className="label-mono label-mono--federal">VIEW MAP ↗</a>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          <div className="meeting-card__ctas">
+            <a href="#calendar" className="btn btn--primary">📅 Add to Calendar</a>
+            <a href="sms:+15805550155" className="btn btn--ghost">Text "HOWDY"</a>
+          </div>
+        </div>
+
+        <div className="meeting-agenda">
+          <div className="meeting-agenda__pattern" />
+          <div className="label-mono label-mono--sky" style={{ position: "relative" }}>WHAT TO EXPECT</div>
+          <h3 className="meeting-card__title" style={{ color: "var(--bone)", position: "relative" }}>
+            An hour and a half of neighbors getting things done.
           </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div style={{ position: "relative" }}>
             {[
-              { k: "WHEN",      v: "Third Thursday of every month" },
-              { k: "TIME",      v: "6:30 PM — 8:00 PM" },
-              { k: "LOCATION",  v: "Ardmore Public Library\n320 E Street NW, Ardmore, OK 73401", map: true },
-              { k: "QUESTIONS", v: "info@cartercountydems.org", mailto: true },
-            ].map(({ k, v, map, mailto }) => (
-              <div key={k} style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 18, paddingBottom: 18, borderBottom: "1px solid var(--line)" }}>
-                <Eyebrow>{k}</Eyebrow>
-                <div style={{ fontFamily: "var(--slab)", fontWeight: 500, fontSize: 17, color: "var(--ink)", lineHeight: 1.45, whiteSpace: "pre-line" }}>
-                  {mailto
-                    ? <a href={`mailto:${v}`} className="nav-link" style={{ color: "var(--federal)", textDecoration: "underline", textUnderlineOffset: 4 }}>{v}</a>
-                    : v}
-                  {map && (
-                    <div style={{ marginTop: 8 }}>
-                      <a href="https://maps.google.com/?q=320+E+St+NW+Ardmore+OK+73401" target="_blank" rel="noopener"
-                         className="nav-link label-mono" style={{ color: "var(--federal)" }}>VIEW MAP ↗</a>
-                    </div>
-                  )}
-                </div>
+              ["6:30", "Coffee, cookies, and catching up"],
+              ["6:45", "Chair's report + officer updates"],
+              ["7:00", "Featured topic or guest speaker"],
+              ["7:30", "Volunteer signups + new business"],
+              ["8:00", "Adjourn — head home, or out for pie"],
+            ].map(([t, d]) => (
+              <div key={t} className="agenda-row">
+                <div className="agenda-row__time">{t}</div>
+                <div className="agenda-row__text">{d}</div>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 28, display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Btn href="#calendar" kind="primary">📅 Add to Calendar</Btn>
-            <Btn href="sms:+15805550155" kind="ghost">Text "HOWDY"</Btn>
-          </div>
-        </div>
-
-        {/* What to expect */}
-        <div style={{ background: "var(--navy)", color: "var(--bone)", padding: 36, position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(135deg, rgba(93,178,232,0.05) 0 12px, transparent 12px 24px)" }} />
-          <div style={{ position: "relative" }}>
-            <Eyebrow color="var(--sky)">WHAT TO EXPECT</Eyebrow>
-            <h3 style={{ fontFamily: "var(--slab)", fontWeight: 700, fontSize: 28, margin: "10px 0 24px", letterSpacing: "-0.02em" }}>
-              An hour and a half of neighbors getting things done.
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {[
-                ["6:30", "Coffee, cookies, and catching up"],
-                ["6:45", "Chair's report + officer updates"],
-                ["7:00", "Featured topic or guest speaker"],
-                ["7:30", "Volunteer signups + new business"],
-                ["8:00", "Adjourn — head home, or out for pie"],
-              ].map(([t, d]) => (
-                <div key={t} style={{ display: "grid", gridTemplateColumns: "60px 1fr", gap: 16, alignItems: "baseline", paddingBottom: 12, borderBottom: "1px solid rgba(245,240,230,0.12)" }}>
-                  <div style={{ fontFamily: "var(--mono)", fontWeight: 500, fontSize: 13, color: "var(--sky)", letterSpacing: "0.06em" }}>{t}</div>
-                  <div style={{ fontFamily: "var(--sans)", fontSize: 15, lineHeight: 1.45 }}>{d}</div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
-    </Container>
+    </div>
   </section>
 );
 
-// ---------- Civic participation ----------
+// ---------- Civic ----------
 const Civic = () => (
-  <section id="vote" style={{ background: "var(--bone)", padding: "96px 0", borderBottom: "1px solid var(--line)" }}>
-    <Container>
+  <section id="vote" className="section section--bone">
+    <div className="container">
       <SectionHead eyebrow="CIVIC PARTICIPATION" title="Your Voice Matters"
         sub="Democracy works when everyone participates. Make sure you're registered, stay informed about upcoming elections, and encourage your neighbors to do the same." />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20 }}>
+
+      <div className="civic-grid">
         {[
           {
-            num: "01",
-            title: "Register to Vote",
+            num: "01", title: "Register to Vote", accent: "#1A5BC6",
             body: "Oklahoma makes it easy to register or update your voter registration online. Check your registration status and sign up at the official Oklahoma Voter Registration Portal.",
-            cta: "Oklahoma Voter Portal →",
-            href: "https://okvoterportal.okelections.gov/",
-            accent: "var(--federal)",
+            cta: "Oklahoma Voter Portal →", href: "https://okvoterportal.okelections.gov/",
           },
           {
-            num: "02",
-            title: "Upcoming Elections",
+            num: "02", title: "Upcoming Elections", accent: "#C8102E",
             body: "Stay informed about every election on your ballot — from local races to statewide and national contests. The Oklahoma State Election Board posts official dates and information.",
-            cta: "View Next Election →",
-            href: "https://oklahoma.gov/elections/elections-results/next-election.html",
-            accent: "var(--civic-red)",
+            cta: "View Next Election →", href: "https://oklahoma.gov/elections/elections-results/next-election.html",
           },
           {
-            num: "03",
-            title: "Find Your Precinct",
+            num: "03", title: "Find Your Precinct", accent: "#5DB2E8",
             body: "Enter your address on our interactive precinct map to see which voting precinct you live in — and find out how you can help lead Democrats in your neighborhood as a Precinct Officer.",
-            cta: "Open Precinct Map →",
-            href: "#precincts",
-            accent: "var(--sky)",
+            cta: "Open Precinct Map →", href: "#precincts",
           },
         ].map(c => (
-          <div key={c.num} style={{ background: "var(--paper)", border: "1px solid var(--line)", padding: 32, display: "flex", flexDirection: "column", position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: c.accent }} />
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 8 }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 12, letterSpacing: "0.18em", color: "var(--ink-3)" }}>{c.num} ·</div>
+          <div key={c.num} className="civic-card">
+            <div className="civic-card__accent" style={{ background: c.accent }} />
+            <div className="civic-card__head">
+              <div className="civic-card__num">{c.num} ·</div>
               <Star size={12} color={c.accent} />
             </div>
-            <h3 style={{ fontFamily: "var(--slab)", fontWeight: 700, fontSize: 28, color: "var(--navy)", margin: "12px 0 14px", letterSpacing: "-0.02em", lineHeight: 1.05 }}>{c.title}</h3>
-            <p style={{ fontFamily: "var(--sans)", fontSize: 15, lineHeight: 1.55, color: "var(--ink-2)", margin: "0 0 24px" }}>{c.body}</p>
-            <div style={{ flex: 1 }} />
-            <a href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener"
-               className="nav-link" style={{
-                 fontFamily: "var(--sans)", fontWeight: 800, fontSize: 13, letterSpacing: "0.08em",
-                 textTransform: "uppercase", color: "var(--navy)", paddingTop: 16, borderTop: "1px solid var(--line)",
-               }}>{c.cta}</a>
+            <h3 className="civic-card__title">{c.title}</h3>
+            <p className="civic-card__body">{c.body}</p>
+            <a href={c.href} target={c.href.startsWith("http") ? "_blank" : undefined} rel="noopener" className="civic-card__cta">
+              {c.cta}
+            </a>
           </div>
         ))}
       </div>
-    </Container>
+    </div>
   </section>
 );
 
-// ---------- Get Involved (extra CTA strip) ----------
+// ---------- Get Involved CTA ----------
 const GetInvolved = () => (
-  <section id="getinvolved" style={{ background: "var(--civic-red)", color: "var(--bone)", padding: "64px 0" }}>
-    <Container style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 32, flexWrap: "wrap" }}>
-      <div style={{ maxWidth: 720 }}>
-        <Eyebrow color="rgba(245,240,230,0.8)">DEMOCRACY SHOWS UP</Eyebrow>
-        <div style={{ fontFamily: "var(--slab)", fontWeight: 700, fontSize: 40, lineHeight: 1, letterSpacing: "-0.025em", marginTop: 10 }}>
+  <section id="getinvolved" className="section section--red" style={{ padding: "var(--pad-section) 0" }}>
+    <div className="container cta-strip">
+      <div className="cta-strip__copy">
+        <div className="label-mono label-mono--light">DEMOCRACY SHOWS UP</div>
+        <div className="cta-strip__title">
           Knock a door. Run for office. Bring a casserole. Every bit helps.
         </div>
       </div>
-      <div style={{ display: "flex", gap: 12 }}>
-        <Btn href="https://forms.gle/example" external kind="sky">Get Involved →</Btn>
-        <Btn href="#contact" kind="ghost-light">Contact Us</Btn>
+      <div className="cta-strip__btns">
+        <a href="https://forms.gle/example" target="_blank" rel="noopener" className="btn btn--sky">Get Involved →</a>
+        <a href="#contact" className="btn btn--ghost-light">Contact Us</a>
       </div>
-    </Container>
+    </div>
   </section>
 );
 
 // ---------- Footer ----------
 const Footer = () => (
-  <footer style={{ background: "var(--navy)", color: "var(--bone)", padding: "64px 0 32px" }}>
-    <Container>
-      <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr", gap: 48, alignItems: "flex-start" }}>
+  <footer className="footer">
+    <div className="container">
+      <div className="footer__grid">
         <div>
           <LogoPrimary scale={0.65} theme="dark" />
-          <p style={{ fontSize: 14, lineHeight: 1.55, color: "rgba(245,240,230,0.7)", maxWidth: 420, marginTop: 22 }}>
+          <p className="footer__about-text">
             Carter County Democratic Party — serving Ardmore, Lone Grove, Healdton, Ringling, Springer, Wilson, and every kitchen table in between since 1907.
           </p>
         </div>
         <div>
-          <Eyebrow color="var(--sky)">CONTACT</Eyebrow>
-          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8, fontSize: 14, lineHeight: 1.55 }}>
-            <a href="mailto:info@cartercountydems.org" className="nav-link" style={{ color: "rgba(245,240,230,0.85)" }}>info@cartercountydems.org</a>
-            <a href="tel:+15805550155" className="nav-link" style={{ color: "rgba(245,240,230,0.85)" }}>(580) 555-0155</a>
-            <a href="https://www.facebook.com/cartercountydemocrats" target="_blank" rel="noopener" className="nav-link" style={{ color: "rgba(245,240,230,0.85)" }}>Facebook Page</a>
-            <a href="https://www.facebook.com/cartercountydemocrats" target="_blank" rel="noopener" className="nav-link" style={{ color: "rgba(245,240,230,0.85)" }}>Facebook Group</a>
+          <div className="label-mono footer__col-title">CONTACT</div>
+          <div className="footer__col-list">
+            <a href="mailto:info@cartercountydems.org">info@cartercountydems.org</a>
+            <a href="tel:+15805550155">(580) 555-0155</a>
+            <a href="https://www.facebook.com/cartercountydemocrats" target="_blank" rel="noopener">Facebook Page</a>
+            <a href="https://www.facebook.com/cartercountydemocrats" target="_blank" rel="noopener">Facebook Group</a>
           </div>
         </div>
         <div>
-          <Eyebrow color="var(--sky)">QUICK LINKS</Eyebrow>
-          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8, fontSize: 14 }}>
+          <div className="label-mono footer__col-title">QUICK LINKS</div>
+          <div className="footer__col-list">
             {[
               ["Find Your Precinct", "#precincts"],
               ["Monthly Meeting", "#meetings"],
@@ -438,17 +370,17 @@ const Footer = () => (
               ["Next Election", "https://oklahoma.gov/elections/elections-results/next-election.html"],
               ["Get Involved", "#getinvolved"],
             ].map(([l, h]) => (
-              <a key={l} href={h} target={h.startsWith("http") ? "_blank" : undefined} rel="noopener" className="nav-link" style={{ color: "rgba(245,240,230,0.85)" }}>{l}</a>
+              <a key={l} href={h} target={h.startsWith("http") ? "_blank" : undefined} rel="noopener">{l}</a>
             ))}
           </div>
         </div>
       </div>
-      <div style={{ height: 1, background: "rgba(245,240,230,0.15)", margin: "40px 0 24px" }} />
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.16em", color: "rgba(245,240,230,0.55)" }}>
+      <div className="footer__rule" />
+      <div className="footer__legal">
         <div>PAID FOR BY THE CARTER COUNTY DEMOCRATIC PARTY. NOT AUTHORIZED BY ANY CANDIDATE OR CANDIDATE'S COMMITTEE.</div>
         <div>© 2026 · CARTERCOUNTYDEMS.ORG</div>
       </div>
-    </Container>
+    </div>
   </footer>
 );
 
